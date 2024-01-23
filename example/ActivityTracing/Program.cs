@@ -2,17 +2,20 @@
 using OpenTelemetry;
 using OpenTelemetry.Trace;
 using Serilog;
+using SerilogTracing;
+using SerilogTracing.Expressions;
 
 const string programSourceName = "Program";
 
 using var tracerProvider = Sdk.CreateTracerProviderBuilder()
     .AddSource(programSourceName)
     .AddSource(Worker.ActivitySourceName)
+    .AddSource("Serilog")
     .AddOtlpExporter()
     .Build();
 
 using var logger = new LoggerConfiguration()
-    .WriteTo.Console()
+    .WriteTo.Console(Formatters.CreateConsoleTextFormatter())
     .CreateLogger();
 
 using var loggerFactory = LoggerFactory
@@ -20,9 +23,13 @@ using var loggerFactory = LoggerFactory
 
 //end of configuration, let's go
 
+using var _ = new TracingConfiguration().EnableTracing();
+
 using var source = new ActivitySource(programSourceName);
 
 using var root = source.StartActivity();
+
+using var serilog = logger.StartActivity("Serilog root");
 
 logger.Information("Started");
 
