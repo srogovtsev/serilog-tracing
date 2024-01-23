@@ -1,12 +1,13 @@
 ﻿// See https://aka.ms/new-console-template for more information
 
+using System;
 using System.Diagnostics;
 using OpenTelemetry;
 using OpenTelemetry.Trace;
 using Serilog;
+using Serilog.Events;
 using Serilog.Formatting.Compact;
 using SerilogTracing;
-using SerilogTracing.Interop;
 
 using var logger = new LoggerConfiguration()
     .Enrich.WithProperty("Application", typeof(Program).Assembly.GetName().Name)
@@ -14,26 +15,45 @@ using var logger = new LoggerConfiguration()
     .CreateLogger()
     ;
 
-using var source = new ActivitySource("qqq");
+const string SourceName = "qqq";
+
+using var source = new ActivitySource(SourceName);
 
 using var tracerProvider = Sdk.CreateTracerProviderBuilder()
     .AddSource(source.Name)
-    .AddSource(LoggerActivitySource.Instance.Name)
-    .AddConsoleExporter()
+    .AddSource("Serilog")
+    //.AddConsoleExporter()
     .Build();
 
 using var rootActivity = source.StartActivity();
 
 logger.Information("Start");
 
-using (var a1 = logger.StartActivity("Activity 1: {prop}", "abc"))
+using (var _ = logger.StartActivity("Activity 1: {prop}", "abc"))
 {
     logger.Information("Inside activity 1");
 
-    using (var a2 = logger.StartActivity("Activity 2: {prop}", "qwe"))
+    using (var inner = logger.StartActivity("Activity 2: {prop}", "qwe"))
     {
         logger.Information("Inside activity 2");
-        a2.AddProperty("test", "value");
+        inner.AddProperty("test", "value");
+    }
+
+    using (var inner = logger.StartActivity("Completed activity"))
+    {
+        inner.Complete();
+    }
+
+    using (var inner = logger.StartActivity("Errored activity"))
+    {
+        try
+        {
+            throw new InvalidOperationException("Test");
+        }
+        catch (Exception e)
+        {
+            inner.Complete(LogEventLevel.Error, e);
+        }
     }
 }
 
