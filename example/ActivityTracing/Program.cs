@@ -2,6 +2,7 @@
 using OpenTelemetry;
 using OpenTelemetry.Trace;
 using Serilog;
+using Serilog.Templates.Themes;
 using SerilogTracing;
 using SerilogTracing.Expressions;
 
@@ -15,7 +16,7 @@ using var tracerProvider = Sdk.CreateTracerProviderBuilder()
     .Build();
 
 using var logger = new LoggerConfiguration()
-    .WriteTo.Console(Formatters.CreateConsoleTextFormatter())
+    .WriteTo.Console(Formatters.CreateConsoleTextFormatter(TemplateTheme.Literate))
     .CreateLogger();
 
 using var loggerFactory = LoggerFactory
