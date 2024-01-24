@@ -24,7 +24,8 @@ using var loggerFactory = LoggerFactory
 
 //end of configuration, let's go
 
-using var _ = new TracingConfiguration().EnableTracing();
+using var _ = new TracingConfiguration()
+    .EnableTracing(logger);
 
 using var source = new ActivitySource(programSourceName);
 
